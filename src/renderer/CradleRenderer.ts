@@ -513,11 +513,17 @@ export class CradleRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
+  public triggerResize(): void {
+    if (!this.container || !this.camera || !this.renderer) return;
+    this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+  }
+
   private handleResize(): void {
-    window.addEventListener('resize', () => {
-      this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => this.triggerResize());
     });
+    resizeObserver.observe(this.container);
   }
 }

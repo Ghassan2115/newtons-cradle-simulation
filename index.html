@@ -15,7 +15,10 @@
       <!-- 1. لوحة التحكم الجانبية (تصميم زجاجي متجمد) -->
       <aside class="control-panel">
         <header class="panel-header">
-          <h1>بندول نيوتن </h1>
+          <div class="panel-header-title-row">
+            <h1>بندول نيوتن </h1>
+            <button id="btn-close-sidebar" class="close-sidebar-btn" aria-label="إغلاق">&times;</button>
+          </div>
           <p>محاكاة علمية تفاعلية عالية الدقة</p>
         </header>
 
@@ -110,6 +113,9 @@
         </section>
       </aside>
 
+      <!-- غطاء الخلفية المعتم للموبايل -->
+      <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
       <!-- 2. منطقة العرض ثلاثي الأبعاد -->
       <main class="viewport-container">
         <!-- شاشة العرض لـ Three.js -->
@@ -117,6 +123,7 @@
 
         <!-- أزرار التحكم الفوري بالحركة -->
         <div class="simulation-controls">
+          <button id="btn-toggle-sidebar" class="btn btn-secondary btn-toggle-sidebar">🔧 الإعدادات</button>
           <button id="btn-play-pause" class="btn btn-primary">إيقاف مؤقت</button>
           <button id="btn-step" class="btn btn-secondary">خطوة واحدة</button>
           <button id="btn-reset" class="btn btn-danger">إعادة ضبط</button>

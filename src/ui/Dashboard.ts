@@ -24,11 +24,18 @@ export class Dashboard {
   constructor() {
     this.ctx = this.chartCanvas.getContext('2d')!;
     this.resizeCanvas();
-    window.addEventListener('resize', () => this.resizeCanvas());
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        this.resizeCanvas();
+        this.drawChart();
+      });
+    });
+    resizeObserver.observe(this.chartCanvas.parentElement!);
   }
 
-  private resizeCanvas(): void {
-    const parent = this.chartCanvas.parentElement!;
+  public resizeCanvas(): void {
+    const parent = this.chartCanvas.parentElement;
+    if (!parent) return;
     this.chartCanvas.width = parent.clientWidth * window.devicePixelRatio;
     this.chartCanvas.height = parent.clientHeight * window.devicePixelRatio;
     this.chartCanvas.style.width = '100%';

@@ -393,6 +393,30 @@ function bindUiEvents(): void {
 
   const btnReset = document.getElementById('btn-reset')!;
   btnReset.addEventListener('click', () => resetSimulation());
+
+  // أحداث لوحة التحكم الجانبية والتجاوب
+  const layout = document.querySelector('.simulation-layout')!;
+  const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')!;
+  const btnCloseSidebar = document.getElementById('btn-close-sidebar')!;
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop')!;
+
+  btnToggleSidebar.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      layout.classList.toggle('sidebar-open');
+      layout.classList.remove('sidebar-collapsed');
+    } else {
+      layout.classList.toggle('sidebar-collapsed');
+      layout.classList.remove('sidebar-open');
+    }
+  });
+
+  btnCloseSidebar.addEventListener('click', () => {
+    layout.classList.remove('sidebar-open');
+  });
+
+  sidebarBackdrop.addEventListener('click', () => {
+    layout.classList.remove('sidebar-open');
+  });
 }
 
 function resetAccumulator(): void {
