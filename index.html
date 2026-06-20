@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بندول نيوتن ثلاثي الأبعاد ة</title>
+    <!-- استيراد خط Tajawal الجميل للنصوص العربية -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="simulation-layout">
+      <!-- 1. لوحة التحكم الجانبية (تصميم زجاجي متجمد) -->
+      <aside class="control-panel">
+        <header class="panel-header">
+          <h1>بندول نيوتن </h1>
+          <p>محاكاة علمية تفاعلية عالية الدقة</p>
+        </header>
+
+        <!-- قسم الحالات الجاهزة -->
+        <section class="control-section">
+          <h2>حالات مسبقة الإعداد</h2>
+          <select id="preset-select" class="custom-select">
+            <option value="one-swing">أرجحة كرة واحدة (افتراضي)</option>
+            <option value="two-swing">أرجحة كرتين</option>
+            <option value="chaos-mass">كتل متفاوتة تدريجياً</option>
+            <option value="newton-heavy">كرة أولى ثقيلة جداً</option>
+            <option value="double-side">أرجحة كرتين من الطرفين</option>
+            <option value="vacuum-perfect">الحالة المثالية (في الفراغ)</option>
+          </select>
+        </section>
+
+        <!-- قسم الإعدادات الفيزيائية العامة -->
+        <section class="control-section">
+          <h2>الإعدادات الفيزيائية</h2>
+          
+          <div class="control-group">
+            <label for="ball-count-range">عدد الكرات: <span id="ball-count-val">5</span></label>
+            <input type="range" id="ball-count-range" min="2" max="8" step="1" value="5" />
+          </div>
+
+          <div class="control-group">
+            <label for="integrator-select">مكامل الحركة:</label>
+            <select id="integrator-select" class="custom-select">
+              <option value="rk4">رونج-كوتا من الرتبة الرابعة (RK4)</option>
+              <option value="verlet">مكامل فيرليه للسرعة (Velocity Verlet)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="restitution-range">معامل الاسترداد (e): <span id="restitution-val">0.99</span></label>
+            <input type="range" id="restitution-range" min="0.5" max="1.0" step="0.01" value="0.99" />
+          </div>
+
+          <div class="control-group">
+            <label for="damping-range">معامل التخميد (مقاومة الهواء): <span id="damping-val">0.01</span></label>
+            <input type="range" id="damping-range" min="0.0" max="0.2" step="0.005" value="0.01" />
+          </div>
+
+          <div class="control-group">
+            <label for="gravity-range">تسارع الجاذبية (g): <span id="gravity-val">9.81</span> m/s²</label>
+            <input type="range" id="gravity-range" min="0.0" max="25.0" step="0.1" value="9.81" />
+          </div>
+
+          <div class="control-group">
+            <label for="color-scheme-select">نظام ألوان الكرات:</label>
+            <select id="color-scheme-select" class="custom-select">
+              <option value="chrome">كروم كلاسيكي عاكس</option>
+              <option value="energy" selected>طاقة الحركة والكمون (علمي)</option>
+              <option value="velocity">خريطة انتشار السرعة (تصادم)</option>
+              <option value="rainbow">ألوان الطيف (Rainbow)</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- قسم خيارات العرض والمؤثرات الإضافية -->
+        <section class="control-section">
+          <h2>المؤثرات والخيارات البصرية</h2>
+          
+          <div class="control-group checkbox-group">
+            <label class="custom-checkbox">
+              <input type="checkbox" id="chk-sound" checked />
+              <span class="checkbox-text">تفعيل المؤثرات الصوتية للتصادم</span>
+            </label>
+          </div>
+
+          <div class="control-group checkbox-group">
+            <label class="custom-checkbox">
+              <input type="checkbox" id="chk-vectors" />
+              <span class="checkbox-text">عرض متجهات الحركة (السرعة والقوة)</span>
+            </label>
+          </div>
+
+          <div class="control-group checkbox-group">
+            <label class="custom-checkbox">
+              <input type="checkbox" id="chk-trails" />
+              <span class="checkbox-text">عرض مسارات تتبع الحركة (Trails)</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- قسم تخصيص كتل الكرات وزوايا الإطلاق -->
+        <section class="control-section" id="balls-customization-section">
+          <h2>تخصيص الكرات الفردية</h2>
+          <div id="balls-sliders-container">
+            <!-- يتم تعبئتها ديناميكياً بواسطة الجافاسكريبت -->
+          </div>
+        </section>
+      </aside>
+
+      <!-- 2. منطقة العرض ثلاثي الأبعاد -->
+      <main class="viewport-container">
+        <!-- شاشة العرض لـ Three.js -->
+        <div id="canvas3d"></div>
+
+        <!-- أزرار التحكم الفوري بالحركة -->
+        <div class="simulation-controls">
+          <button id="btn-play-pause" class="btn btn-primary">إيقاف مؤقت</button>
+          <button id="btn-step" class="btn btn-secondary">خطوة واحدة</button>
+          <button id="btn-reset" class="btn btn-danger">إعادة ضبط</button>
+          <div class="speed-control">
+            <label for="speed-range">السرعة البصرية: <span id="speed-val">1.0</span>x</label>
+            <input type="range" id="speed-range" min="0.05" max="2.0" step="0.05" value="1.0" />
+          </div>
+        </div>
+
+        <!-- شريط الحالة والأخطاء -->
+        <div class="status-bar">
+          <div class="status-item">الوقت: <span id="sim-time">0.00</span> ثانية</div>
+          <div class="status-item">تردد الحساب: <span>1000 هرتز</span></div>
+          <div class="status-item">الخطأ النسبي للطاقة: <span id="energy-error">0.000%</span></div>
+          <div class="status-item">إطارات الشاشة: <span id="fps-val">60</span> FPS</div>
+        </div>
+
+        <!-- 3. لوحة الرسوم البيانية للطاقة -->
+        <footer class="analytics-panel">
+          <div class="chart-header">
+            <h3>التحليل الفوري لمخطط الطاقة</h3>
+            <div class="legend">
+              <span class="legend-item"><span class="legend-color color-kinetic"></span>الطاقة الحركية (Ek)</span>
+              <span class="legend-item"><span class="legend-color color-potential"></span>الطاقة الكامنة (Ep)</span>
+              <span class="legend-item"><span class="legend-color color-total"></span>الطاقة الميكانيكية الكلية (Et)</span>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="energy-chart"></canvas>
+          </div>
+        </footer>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
