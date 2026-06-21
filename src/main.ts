@@ -93,7 +93,7 @@ function simulationLoop(currentTime: number): void {
   lastTime = currentTime;
 
   // سقف أمان للفارق الزمني لمنع "دوامة الموت" في حال البطء الشديد للمتصفح
-  if (delta > 0.25) delta = 0.25;
+  if (delta > 0.1) delta = 0.1;
 
   // حساب معدل الإطارات الحقيقي (FPS) كل ثانية واحدة
   fpsCount++;
@@ -104,23 +104,38 @@ function simulationLoop(currentTime: number): void {
   }
 
   const currentConfig = engine.getConfig();
-  let previousState = engine.getState();
+
+  // حفظ نسخة يدوية من الحالة السابقة للاستكمال الخطي
+  let prevTheta = [...engine.getState().theta];
+  let prevOmega = [...engine.getState().omega];
+  let prevAlpha = [...engine.getState().alpha];
 
   if (isPlaying) {
     // تجميع الوقت مضروباً بالسرعة البصرية المطلوبة
     accumulator += delta * speedFactor;
 
+    // تحديد حد أقصى لعدد الخطوات الفيزيائية لكل إطار لمنع دوامة الموت
+    const maxSteps = 16;
+    let steps = 0;
+
     // تشغيل خطوات الفيزياء بتردد 1000 هرتز ثابت
-    while (accumulator >= physicsDt) {
-      previousState = engine.getState();
+    while (accumulator >= physicsDt && steps < maxSteps) {
+      prevTheta = [...engine.getState().theta];
+      prevOmega = [...engine.getState().omega];
+      prevAlpha = [...engine.getState().alpha];
       engine.step(physicsDt);
       accumulator -= physicsDt;
+      steps++;
 
       // رصد وإصدار المؤثرات الصوتية عند حدوث تصادم
-      const currentState = engine.getState();
-      if (currentState.lastCollisionVelocity > 0) {
-        soundManager.playClick(currentState.lastCollisionVelocity);
+      if (engine.getState().lastCollisionVelocity > 0) {
+        soundManager.playClick(engine.getState().lastCollisionVelocity);
       }
+    }
+
+    // إذا تبقى تراكم كبير بعد الحد الأقصى، تخلص منه لمنع التراكم
+    if (accumulator > physicsDt * 4) {
+      accumulator = 0;
     }
   }
 
@@ -134,9 +149,9 @@ function simulationLoop(currentTime: number): void {
     state.omega,
     state.alpha,
     currentConfig,
-    previousState.theta,
-    previousState.omega,
-    previousState.alpha,
+    prevTheta,
+    prevOmega,
+    prevAlpha,
     alpha
   );
   renderer.render();
@@ -148,9 +163,9 @@ function simulationLoop(currentTime: number): void {
     dashboard.addEnergySample(state.kineticEnergy, state.potentialEnergy, state.totalEnergy);
   }
 
-  // رسم المخططات البيانية بمعدل أخف قليلاً للحفاظ على الأداء
+  // رسم المخططات البيانية بمعدل أخف للحفاظ على الأداء
   chartFrameCount++;
-  if (chartFrameCount % 2 === 0) {
+  if (chartFrameCount % 6 === 0) {
     dashboard.drawChart();
   }
 

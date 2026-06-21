@@ -145,52 +145,87 @@ export class Dashboard {
    * رسم منحنيات الطاقة الحية على الـ Canvas
    */
   public drawChart(): void {
-    const width = this.chartCanvas.width / window.devicePixelRatio;
-    const height = this.chartCanvas.height / window.devicePixelRatio;
+    const canvasW = this.chartCanvas.width / window.devicePixelRatio;
+    const canvasH = this.chartCanvas.height / window.devicePixelRatio;
     const ctx = this.ctx;
 
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    // هوامش محور الرسم لتظهر الحدود بوضوح
+    const padLeft = 45;
+    const padRight = 10;
+    const padTop = 10;
+    const padBottom = 20;
+    const width = canvasW - padLeft - padRight;
+    const height = canvasH - padTop - padBottom;
+
+    if (width <= 0 || height <= 0) return;
+
+    // 1. رسم إطار المحاور بوضوح تام
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    // خط المحور السفلي (X-axis)
+    ctx.moveTo(padLeft, padTop + height);
+    ctx.lineTo(padLeft + width, padTop + height);
+    // خط المحور الأيسر (Y-axis)
+    ctx.moveTo(padLeft, padTop);
+    ctx.lineTo(padLeft, padTop + height);
+    ctx.stroke();
 
     if (this.historyKE.length === 0) return;
 
-    // 1. حساب أقصى قيمة طاقة لتوسيع المحور الصادي تلقائياً
-    let maxEnergy = 1e-5; // قيمة دنيا صغيرة جداً لتمكين التوسيع الديناميكي الكامل وتجنب تسطيح المنحنيات
+    // 2. حساب أقصى قيمة طاقة لتوسيع المحور الصادي تلقائياً
+    let maxEnergy = 1e-5;
     for (let i = 0; i < this.historyKE.length; i++) {
       maxEnergy = Math.max(maxEnergy, this.historyKE[i], this.historyPE[i], this.historyTE[i]);
     }
-    // إضافة هامش علوي بنسبة 10%
-    maxEnergy *= 1.1;
+    maxEnergy *= 1.15; // هامش علوي
 
-    // 2. رسم شبكة الخلفية (Grid Lines)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < width; x += 40) {
+    // 3. رسم شبكة الخلفية وتسميات المحور Y
+    ctx.font = '10px Tajawal, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const gridLines = 4;
+    for (let g = 0; g <= gridLines; g++) {
+      const yFrac = g / gridLines;
+      const yPos = padTop + height * (1 - yFrac);
+      const energyVal = maxEnergy * yFrac;
+
+      // خط شبكة أفقي
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
+      ctx.moveTo(padLeft, yPos);
+      ctx.lineTo(padLeft + width, yPos);
       ctx.stroke();
-    }
-    for (let y = 0; y < height; y += 30) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
+
+      // تسمية القيمة
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      if (energyVal < 0.001) {
+        ctx.fillText(energyVal.toExponential(0), padLeft - 5, yPos);
+      } else {
+        ctx.fillText(energyVal.toFixed(4), padLeft - 5, yPos);
+      }
     }
 
-    // 3. رسم منحنيات الطاقة
-    const drawPath = (data: number[], color: string, glowColor: string) => {
+    // تسمية "0" على المحور السفلي
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.textAlign = 'right';
+    ctx.fillText('0', padLeft - 5, padTop + height);
+
+    // 4. رسم منحنيات الطاقة
+    const drawPath = (data: number[], color: string) => {
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 4;
 
       const stepX = width / (this.historyMaxSamples - 1);
       const startIdx = this.historyMaxSamples - data.length;
 
       for (let i = 0; i < data.length; i++) {
-        const x = (startIdx + i) * stepX;
-        const y = height - (data[i] / maxEnergy) * height;
+        const x = padLeft + (startIdx + i) * stepX;
+        const y = padTop + height - (data[i] / maxEnergy) * height;
 
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -199,14 +234,13 @@ export class Dashboard {
         }
       }
       ctx.stroke();
-      ctx.shadowBlur = 0; // تنظيف توهج الظلال
     };
 
     // طاقة كامنة (سماوي)
-    drawPath(this.historyPE, '#00e5ff', 'rgba(0, 229, 255, 0.4)');
+    drawPath(this.historyPE, '#00e5ff');
     // طاقة حركية (وردي)
-    drawPath(this.historyKE, '#ff00aa', 'rgba(255, 0, 170, 0.4)');
+    drawPath(this.historyKE, '#ff00aa');
     // طاقة ميكانيكية كلية (أخضر)
-    drawPath(this.historyTE, '#00ff66', 'rgba(0, 255, 102, 0.4)');
+    drawPath(this.historyTE, '#00ff66');
   }
 }

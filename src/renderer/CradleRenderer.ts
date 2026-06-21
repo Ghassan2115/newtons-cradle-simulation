@@ -51,11 +51,11 @@ export class CradleRenderer {
     this.camera.position.set(0, 0.15, 0.65); // موضع مريح لرؤية البندول
 
     // 3. إعداد المصير مع تفعيل الظلال والـ Antialiasing
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // تحسين الأداء: تقييد نسبة البيكسل
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.BasicShadowMap; // تحسين الأداء: الظلال الأساسية أسرع بكثير
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.container.appendChild(this.renderer.domElement);
@@ -78,8 +78,8 @@ export class CradleRenderer {
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dirLight.position.set(0.3, 0.8, 0.4);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.mapSize.width = 512; // تحسين الأداء: خفض دقة خريطة الظلال
+    dirLight.shadow.mapSize.height = 512;
     dirLight.shadow.camera.near = 0.1;
     dirLight.shadow.camera.far = 2.0;
     const d = 0.3;
@@ -90,18 +90,10 @@ export class CradleRenderer {
     dirLight.shadow.bias = -0.0005;
     this.scene.add(dirLight);
 
-    // أضواء ملونة خفيفة Specular Highlights لإعطاء مظهر جمالي للكرات المعدنية
-    const blueLight = new THREE.PointLight(0x00aaff, 3.0, 1.0);
-    blueLight.position.set(-0.5, 0.2, 0.3);
-    this.scene.add(blueLight);
-
-    const purpleLight = new THREE.PointLight(0xff00aa, 2.0, 1.0);
-    purpleLight.position.set(0.5, 0.2, -0.3);
-    this.scene.add(purpleLight);
-
-    const softWhite = new THREE.PointLight(0xffffff, 1.0, 0.5);
-    softWhite.position.set(0, 0.3, 0);
-    this.scene.add(softWhite);
+    // ضوء ملون واحد خفيف بدلاً من ثلاثة أضواء نقطية لتحسين الأداء
+    const accentLight = new THREE.PointLight(0x88bbff, 2.5, 1.5);
+    accentLight.position.set(-0.3, 0.3, 0.3);
+    this.scene.add(accentLight);
   }
 
   private initEnvironment(): void {
@@ -193,7 +185,7 @@ export class CradleRenderer {
     // بناء الكرات والخيوط والأسهم والمسارات
     for (let i = 0; i < n; i++) {
       // 1. الكرات (خامة منفصلة لكل كرة لتغيير ألوانها ديناميكياً وبشكل مستقل)
-      const ballGeo = new THREE.SphereGeometry(config.radii[i], 48, 48);
+      const ballGeo = new THREE.SphereGeometry(config.radii[i], 24, 24); // تحسين الأداء: تقليل عدد المثلثات
       
       let defaultColor = 0xcccccc;
       if (this.colorScheme === 'rainbow') {

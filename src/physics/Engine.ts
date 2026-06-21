@@ -37,11 +37,11 @@ export class CradleEngine {
   }
 
   public getState(): CradleState {
-    return { ...this.state };
+    return this.state;
   }
 
   public getConfig(): CradleConfig {
-    return { ...this.config };
+    return this.config;
   }
 
   public setIntegrator(integrator: Integrator): void {

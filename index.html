@@ -141,21 +141,22 @@
           <div class="status-item">إطارات الشاشة: <span id="fps-val">60</span> FPS</div>
         </div>
 
-        <!-- 3. لوحة الرسوم البيانية للطاقة -->
-        <footer class="analytics-panel">
-          <div class="chart-header">
-            <h3>التحليل الفوري لمخطط الطاقة</h3>
-            <div class="legend">
-              <span class="legend-item"><span class="legend-color color-kinetic"></span>الطاقة الحركية (Ek)</span>
-              <span class="legend-item"><span class="legend-color color-potential"></span>الطاقة الكامنة (Ep)</span>
-              <span class="legend-item"><span class="legend-color color-total"></span>الطاقة الميكانيكية الكلية (Et)</span>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="energy-chart"></canvas>
-          </div>
-        </footer>
       </main>
+
+      <!-- 3. لوحة الرسوم البيانية للطاقة (الجانب الأيسر في RTL) -->
+      <aside class="analytics-panel left-panel">
+        <div class="chart-header">
+          <h3>التحليل الفوري لمخطط الطاقة</h3>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-color color-kinetic"></span>الطاقة الحركية (Ek)</span>
+            <span class="legend-item"><span class="legend-color color-potential"></span>الطاقة الكامنة (Ep)</span>
+            <span class="legend-item"><span class="legend-color color-total"></span>الطاقة الميكانيكية الكلية (Et)</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="energy-chart"></canvas>
+        </div>
+      </aside>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
