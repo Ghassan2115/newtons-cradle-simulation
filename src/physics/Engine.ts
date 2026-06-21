@@ -64,6 +64,21 @@ export class CradleEngine {
     this.state.lastCollisionVelocity = 0;
   }
 
+  public setAngularVelocities(omega: number[]): void {
+    const n = this.config.ballCount;
+    this.state.omega = [...omega];
+    while (this.state.omega.length < n) this.state.omega.push(0);
+
+    const pe = this.calculatePotentialEnergy(this.state.theta);
+    const ke = this.calculateKineticEnergy(this.state.omega);
+    this.state.kineticEnergy = ke;
+    this.state.potentialEnergy = pe;
+    this.state.totalEnergy = pe + ke;
+    this.state.initialEnergy = pe + ke;
+    this.state.relativeEnergyError = 0;
+    this.state.lastCollisionVelocity = 0;
+  }
+
   
   public step(dt: number): void {
 

@@ -84,9 +84,7 @@ describe("Newton's Cradle Physics Engine Tests", () => {
     const initialTheta = [0, 0];
     const engine = new CradleEngine(initialTheta, config, new RK4Integrator());
 
-    engine.state.omega[0] = 1.0 / config.lengths[0];
-
-    engine.state.initialEnergy = engine.calculateKineticEnergy(engine.state.omega);
+    engine.setAngularVelocities([1.0 / config.lengths[0], 0]);
 
     const dt = 0.001;
 
