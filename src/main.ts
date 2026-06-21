@@ -6,7 +6,6 @@ import { SoundManager } from './ui/SoundManager';
 import { RK4Integrator } from './physics/integrators/RK4';
 import { VelocityVerletIntegrator } from './physics/integrators/VelocityVerlet';
 
-// 1. المتغيرات العامة للمحاكاة
 let engine: CradleEngine;
 let renderer: CradleRenderer;
 let dashboard: Dashboard;
@@ -14,7 +13,7 @@ let soundManager: SoundManager;
 
 let isPlaying = true;
 let speedFactor = 1.0;
-let physicsDt = 0.001; // 1000 Hz
+let physicsDt = 0.001;
 let accumulator = 0.0;
 let lastTime = 0;
 let fpsLastTime = 0;
@@ -22,16 +21,13 @@ let fpsCount = 0;
 let currentFps = 60;
 let chartFrameCount = 0;
 
-// الزوايا الابتدائية المخزنة للتعديل وإعادة الضبط
 let initialAngles: number[] = [];
 
-// 2. إعداد التكوين الافتراضي للبندول
 function createConfig(ballCount: number, masses?: number[], radii?: number[], lengths?: number[]): CradleConfig {
-  const finalMasses = masses || new Array<number>(ballCount).fill(0.05); // 50g
-  const finalRadii = radii || new Array<number>(ballCount).fill(0.015); // 1.5cm
-  const finalLengths = lengths || new Array<number>(ballCount).fill(0.25); // 25cm
+  const finalMasses = masses || new Array<number>(ballCount).fill(0.05);
+  const finalRadii = radii || new Array<number>(ballCount).fill(0.015);
+  const finalLengths = lengths || new Array<number>(ballCount).fill(0.25);
 
-  // حساب نقاط التعليق بحيث تكون الكرات متلامسة تماماً في وضع الاتزان الرأسي
   const pivots: { x: number; y: number; z: number }[] = [];
   let totalWidth = 0;
   for (let i = 0; i < ballCount; i++) {
@@ -43,13 +39,12 @@ function createConfig(ballCount: number, masses?: number[], radii?: number[], le
   for (let i = 0; i < ballCount; i++) {
     pivots.push({
       x: currentX + finalRadii[i],
-      y: finalLengths[i] + finalRadii[i] + 0.002, // الارتفاع الرأسي المحسوب لتلافي الارتطام بالقاعدة
+      y: finalLengths[i] + finalRadii[i] + 0.002,
       z: 0,
     });
     currentX += finalRadii[i] * 2;
   }
 
-  // استخراج القيم الحالية من الواجهة إذا وجدت
   const restitutionInput = document.getElementById('restitution-range') as HTMLInputElement;
   const dampingInput = document.getElementById('damping-range') as HTMLInputElement;
   const gravityInput = document.getElementById('gravity-range') as HTMLInputElement;
@@ -66,36 +61,29 @@ function createConfig(ballCount: number, masses?: number[], radii?: number[], le
   };
 }
 
-// 3. تهيئة المحاكاة لأول مرة
 function initSimulation(): void {
-  // أ. إنشاء مصير Three.js ولوحة التحكم ومولد الصوت
+
   const container = document.getElementById('canvas3d')!;
   renderer = new CradleRenderer(container);
   dashboard = new Dashboard();
   soundManager = new SoundManager();
 
-  // ب. ربط أحداث عناصر التحكم في الواجهة (يجب ربطها قبل تحميل الحالة الأولى لمزامنة الخيارات)
   bindUiEvents();
 
-  // ج. تحميل الحالة الافتراضية الأولى (one-swing)
   loadPreset('one-swing');
 
-  // د. بدء حلقة المحاكاة
   lastTime = performance.now();
   fpsLastTime = lastTime;
   requestAnimationFrame(simulationLoop);
 }
 
-// 4. حلقة المحاكاة والتقديم الرسومي (Simulation Loop)
 function simulationLoop(currentTime: number): void {
-  // حساب الفارق الزمني للإطار الحقيقي
+
   let delta = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
 
-  // سقف أمان للفارق الزمني لمنع "دوامة الموت" في حال البطء الشديد للمتصفح
   if (delta > 0.1) delta = 0.1;
 
-  // حساب معدل الإطارات الحقيقي (FPS) كل ثانية واحدة
   fpsCount++;
   if (currentTime - fpsLastTime >= 1000) {
     currentFps = (fpsCount * 1000) / (currentTime - fpsLastTime);
@@ -105,20 +93,17 @@ function simulationLoop(currentTime: number): void {
 
   const currentConfig = engine.getConfig();
 
-  // حفظ نسخة يدوية من الحالة السابقة للاستكمال الخطي
   let prevTheta = [...engine.getState().theta];
   let prevOmega = [...engine.getState().omega];
   let prevAlpha = [...engine.getState().alpha];
 
   if (isPlaying) {
-    // تجميع الوقت مضروباً بالسرعة البصرية المطلوبة
+
     accumulator += delta * speedFactor;
 
-    // تحديد حد أقصى لعدد الخطوات الفيزيائية لكل إطار لمنع دوامة الموت
     const maxSteps = 16;
     let steps = 0;
 
-    // تشغيل خطوات الفيزياء بتردد 1000 هرتز ثابت
     while (accumulator >= physicsDt && steps < maxSteps) {
       prevTheta = [...engine.getState().theta];
       prevOmega = [...engine.getState().omega];
@@ -127,22 +112,18 @@ function simulationLoop(currentTime: number): void {
       accumulator -= physicsDt;
       steps++;
 
-      // رصد وإصدار المؤثرات الصوتية عند حدوث تصادم
       if (engine.getState().lastCollisionVelocity > 0) {
         soundManager.playClick(engine.getState().lastCollisionVelocity);
       }
     }
 
-    // إذا تبقى تراكم كبير بعد الحد الأقصى، تخلص منه لمنع التراكم
     if (accumulator > physicsDt * 4) {
       accumulator = 0;
     }
   }
 
-  // معامل التنعيم الرسومي
   const alpha = isPlaying ? accumulator / physicsDt : 1.0;
 
-  // تحديث الرسوميات باستعمال الاستكمال خطي لمنع الـ Stuttering
   const state = engine.getState();
   renderer.update(
     state.theta,
@@ -156,14 +137,12 @@ function simulationLoop(currentTime: number): void {
   );
   renderer.render();
 
-  // تحديث لوحة البيانات والرسوم البيانية
   dashboard.updateStatus(state, currentFps);
 
   if (isPlaying) {
     dashboard.addEnergySample(state.kineticEnergy, state.potentialEnergy, state.totalEnergy);
   }
 
-  // رسم المخططات البيانية بمعدل أخف للحفاظ على الأداء
   chartFrameCount++;
   if (chartFrameCount % 6 === 0) {
     dashboard.drawChart();
@@ -172,7 +151,6 @@ function simulationLoop(currentTime: number): void {
   requestAnimationFrame(simulationLoop);
 }
 
-// دالة لمزامنة خيارات العرض المضافة حديثاً مع المصيّر
 function updateRendererSettings(): void {
   const colorSelect = document.getElementById('color-scheme-select') as HTMLSelectElement;
   const chkSound = document.getElementById('chk-sound') as HTMLInputElement;
@@ -185,33 +163,31 @@ function updateRendererSettings(): void {
   if (chkTrails) renderer.setShowTrails(chkTrails.checked);
 }
 
-// 5. تحميل التكوينات الجاهزة للمحاكاة (Presets)
 function loadPreset(presetName: string, customBallCount?: number): void {
   isPlaying = false;
   document.getElementById('btn-play-pause')!.textContent = 'تشغيل';
   dashboard.resetChart();
 
-  // جلب عدد الكرات المطلوب؛ إما المحدد يدوياً أو من شريط التمرير أو 5 كافتراضي
   const ballCountRange = document.getElementById('ball-count-range') as HTMLInputElement;
   const ballCount = customBallCount !== undefined ? customBallCount : (ballCountRange ? parseInt(ballCountRange.value) : 5);
 
   let config: CradleConfig;
 
   switch (presetName) {
-    case 'one-swing': // بندول واحد يتأرجح
+    case 'one-swing':
       config = createConfig(ballCount);
       initialAngles = new Array<number>(ballCount).fill(0);
       if (ballCount > 0) initialAngles[0] = -0.35;
       break;
 
-    case 'two-swing': // بندولين يتأرجحان
+    case 'two-swing':
       config = createConfig(ballCount);
       initialAngles = new Array<number>(ballCount).fill(0);
       if (ballCount > 0) initialAngles[0] = -0.35;
       if (ballCount > 1) initialAngles[1] = -0.35;
       break;
 
-    case 'chaos-mass': // كتل متفاوتة تصاعدياً
+    case 'chaos-mass':
       {
         const masses: number[] = [];
         const radii: number[] = [];
@@ -228,7 +204,7 @@ function loadPreset(presetName: string, customBallCount?: number): void {
       }
       break;
 
-    case 'newton-heavy': // كرة أولى ثقيلة جداً
+    case 'newton-heavy':
       {
         const masses = new Array<number>(ballCount).fill(0.05);
         if (ballCount > 0) masses[0] = 0.25;
@@ -243,20 +219,20 @@ function loadPreset(presetName: string, customBallCount?: number): void {
       }
       break;
 
-    case 'double-side': // كرتان من الطرفين
+    case 'double-side':
       config = createConfig(ballCount);
       initialAngles = new Array<number>(ballCount).fill(0);
       if (ballCount > 0) initialAngles[0] = -0.35;
       if (ballCount > 1) initialAngles[ballCount - 1] = 0.35;
       break;
 
-    case 'vacuum-perfect': // في الفراغ التام وتصادم مرن تماماً
+    case 'vacuum-perfect':
       config = createConfig(ballCount);
       config.restitution = 1.0;
       config.damping = 0.0;
       initialAngles = new Array<number>(ballCount).fill(0);
       if (ballCount > 0) initialAngles[0] = -0.35;
-      // تحديث عناصر الإدخال
+
       (document.getElementById('restitution-range') as HTMLInputElement).value = '1.0';
       (document.getElementById('damping-range') as HTMLInputElement).value = '0.0';
       break;
@@ -267,30 +243,25 @@ function loadPreset(presetName: string, customBallCount?: number): void {
       if (ballCount > 0) initialAngles[0] = -0.35;
   }
 
-  // تحديث محدد عدد الكرات في الواجهة
   if (ballCountRange) {
     ballCountRange.value = config.ballCount.toString();
   }
   dashboard.updateLabels(config, speedFactor);
 
-  // إعادة بناء محرك الفيزياء ومصيّر Three.js
   const activeIntegratorVal = (document.getElementById('integrator-select') as HTMLSelectElement).value;
   const integrator = activeIntegratorVal === 'rk4' ? new RK4Integrator() : new VelocityVerletIntegrator();
 
   engine = new CradleEngine(initialAngles, config, integrator);
-  
-  // تحديث الإعدادات البصرية وتجديد الهيكل ثلاثي الأبعاد
+
   updateRendererSettings();
   renderer.rebuildCradle(config);
 
-  // إعادة بناء أشرطة الكرات الفردية
   dashboard.rebuildBallControls(config, initialAngles, (idx, mass, angle) => {
-    // تعديل الكتلة والزاوية من الأشرطة الفردية
+
     const currentMasses = [...engine.getConfig().masses];
     currentMasses[idx] = mass;
     initialAngles[idx] = angle;
 
-    // إعادة بناء نقاط التعليق والأقطار بناءً على الكتل الجديدة للواقعية البصرية
     const currentRadii = [...engine.getConfig().radii];
     const rho = 7850;
     currentRadii[idx] = Math.pow((3 * mass) / (4 * Math.PI * rho), 1 / 3);
@@ -301,13 +272,11 @@ function loadPreset(presetName: string, customBallCount?: number): void {
     resetSimulation();
   });
 
-  // إضافة أول عينة للرسم البياني لتوضيح خط البدء
   const state = engine.getState();
   dashboard.addEnergySample(state.kineticEnergy, state.potentialEnergy, state.totalEnergy);
   dashboard.drawChart();
 }
 
-// 6. إعادة ضبط المحاكاة للحالة الابتدائية
 function resetSimulation(): void {
   const currentConfig = engine.getConfig();
   const activeIntegratorVal = (document.getElementById('integrator-select') as HTMLSelectElement).value;
@@ -322,17 +291,15 @@ function resetSimulation(): void {
   dashboard.drawChart();
 }
 
-// 7. ربط أحداث لوحة التحكم بالأكواد البرمجية
 function bindUiEvents(): void {
-  // محدد الحالات مسبقة الإعداد
+
   const presetSelect = document.getElementById('preset-select') as HTMLSelectElement;
   presetSelect.addEventListener('change', () => loadPreset(presetSelect.value));
 
-  // أشرطة التمرير العامة
   const ballCountRange = document.getElementById('ball-count-range') as HTMLInputElement;
   ballCountRange.addEventListener('input', () => {
     const count = parseInt(ballCountRange.value);
-    loadPreset(presetSelect.value, count); // إعادة بناء البندول بالعدد المختار حديثاً ومطابقة النموذج
+    loadPreset(presetSelect.value, count);
   });
 
   const integratorSelect = document.getElementById('integrator-select') as HTMLSelectElement;
@@ -369,7 +336,6 @@ function bindUiEvents(): void {
     dashboard.updateLabels(engine.getConfig(), speedFactor);
   });
 
-  // أحداث خيارات العرض الإضافية وأنظمة الألوان
   const colorSchemeSelect = document.getElementById('color-scheme-select') as HTMLSelectElement;
   colorSchemeSelect.addEventListener('change', () => {
     renderer.setColorScheme(colorSchemeSelect.value);
@@ -391,7 +357,6 @@ function bindUiEvents(): void {
     renderer.setShowTrails(chkTrails.checked);
   });
 
-  // أزرار التحكم بالتشغيل
   const btnPlayPause = document.getElementById('btn-play-pause')!;
   btnPlayPause.addEventListener('click', () => {
     isPlaying = !isPlaying;
@@ -409,7 +374,6 @@ function bindUiEvents(): void {
   const btnReset = document.getElementById('btn-reset')!;
   btnReset.addEventListener('click', () => resetSimulation());
 
-  // أحداث لوحة التحكم الجانبية والتجاوب
   const layout = document.querySelector('.simulation-layout')!;
   const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')!;
   const btnCloseSidebar = document.getElementById('btn-close-sidebar')!;
@@ -438,5 +402,4 @@ function resetAccumulator(): void {
   accumulator = 0;
 }
 
-// تشغيل النظام عند تحميل الصفحة
 window.addEventListener('DOMContentLoaded', initSimulation);

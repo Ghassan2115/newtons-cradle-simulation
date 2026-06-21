@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>بندول نيوتن ثلاثي الابعاد</title >
-    <!-- استيراد خط Tajawal الجميل للنصوص العربية -->
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
   </head>
   <body>
     <div class="simulation-layout">
-      <!-- 1. لوحة التحكم الجانبية (تصميم زجاجي متجمد) -->
+      
       <aside class="control-panel">
         <header class="panel-header">
           <div class="panel-header-title-row">
@@ -22,7 +22,7 @@
           <p>محاكاة علمية تفاعلية عالية الدقة</p>
         </header>
 
-        <!-- قسم الحالات الجاهزة -->
+        
         <section class="control-section">
           <h2>حالات مسبقة الإعداد</h2>
           <select id="preset-select" class="custom-select">
@@ -35,7 +35,7 @@
           </select>
         </section>
 
-        <!-- قسم الإعدادات الفيزيائية العامة -->
+        
         <section class="control-section">
           <h2>الإعدادات الفيزيائية</h2>
           
@@ -78,7 +78,7 @@
           </div>
         </section>
 
-        <!-- قسم خيارات العرض والمؤثرات الإضافية -->
+        
         <section class="control-section">
           <h2>المؤثرات والخيارات البصرية</h2>
           
@@ -104,24 +104,24 @@
           </div>
         </section>
 
-        <!-- قسم تخصيص كتل الكرات وزوايا الإطلاق -->
+        
         <section class="control-section" id="balls-customization-section">
           <h2>تخصيص الكرات الفردية</h2>
           <div id="balls-sliders-container">
-            <!-- يتم تعبئتها ديناميكياً بواسطة الجافاسكريبت -->
+            
           </div>
         </section>
       </aside>
 
-      <!-- غطاء الخلفية المعتم للموبايل -->
+      
       <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
-      <!-- 2. منطقة العرض ثلاثي الأبعاد -->
+      
       <main class="viewport-container">
-        <!-- شاشة العرض لـ Three.js -->
+        
         <div id="canvas3d"></div>
 
-        <!-- أزرار التحكم الفوري بالحركة -->
+        
         <div class="simulation-controls">
           <button id="btn-toggle-sidebar" class="btn btn-secondary btn-toggle-sidebar">🔧 الإعدادات</button>
           <button id="btn-play-pause" class="btn btn-primary">إيقاف مؤقت</button>
@@ -133,7 +133,7 @@
           </div>
         </div>
 
-        <!-- شريط الحالة والأخطاء -->
+        
         <div class="status-bar">
           <div class="status-item">الوقت: <span id="sim-time">0.00</span> ثانية</div>
           <div class="status-item">تردد الحساب: <span>1000 هرتز</span></div>
@@ -143,7 +143,7 @@
 
       </main>
 
-      <!-- 3. لوحة الرسوم البيانية للطاقة (الجانب الأيسر في RTL) -->
+      
       <aside class="analytics-panel left-panel">
         <div class="chart-header">
           <h3>التحليل الفوري لمخطط الطاقة</h3>

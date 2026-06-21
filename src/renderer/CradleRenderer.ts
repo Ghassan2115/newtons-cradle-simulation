@@ -9,13 +9,11 @@ export class CradleRenderer {
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
 
-  // الكائنات ثلاثية الأبعاد
   private ballsMesh: THREE.Mesh[] = [];
   private lines: THREE.Line[] = [];
   private frameGroup!: THREE.Group;
   private basePlate!: THREE.Mesh;
 
-  // خيارات العرض والجمالية المضافة حديثاً
   private colorScheme: string = 'energy';
   private showVectors: boolean = false;
   private showTrails: boolean = false;
@@ -36,49 +34,45 @@ export class CradleRenderer {
   }
 
   private initScene(): void {
-    // 1. إنشاء المشهد بخلفية ليمون أبيض ناصعة وجميلة
+
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xfaf9f0);
     this.scene.fog = new THREE.FogExp2(0xfaf9f0, 0.15);
 
-    // 2. إعداد الكاميرا
     this.camera = new THREE.PerspectiveCamera(
       45,
       this.container.clientWidth / this.container.clientHeight,
       0.01,
       10
     );
-    this.camera.position.set(0, 0.15, 0.65); // موضع مريح لرؤية البندول
+    this.camera.position.set(0, 0.15, 0.65);
 
-    // 3. إعداد المصير مع تفعيل الظلال والـ Antialiasing
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // تحسين الأداء: تقييد نسبة البيكسل
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.BasicShadowMap; // تحسين الأداء: الظلال الأساسية أسرع بكثير
+    this.renderer.shadowMap.type = THREE.BasicShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. إعداد التحكم بالكاميرا
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.maxPolarAngle = Math.PI / 2 - 0.05; // منع الكاميرا من النزول تحت الأرض
+    this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
     this.controls.minDistance = 0.1;
     this.controls.maxDistance = 2.0;
   }
 
   private initLights(): void {
-    // ضوء محيطي معزز ليتناسب مع الخلفية المضيئة
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
     this.scene.add(ambientLight);
 
-    // ضوء مسلط رئيسي لتوليد ظلال حادة وناعمة
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dirLight.position.set(0.3, 0.8, 0.4);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 512; // تحسين الأداء: خفض دقة خريطة الظلال
+    dirLight.shadow.mapSize.width = 512;
     dirLight.shadow.mapSize.height = 512;
     dirLight.shadow.camera.near = 0.1;
     dirLight.shadow.camera.far = 2.0;
@@ -90,18 +84,17 @@ export class CradleRenderer {
     dirLight.shadow.bias = -0.0005;
     this.scene.add(dirLight);
 
-    // ضوء ملون واحد خفيف بدلاً من ثلاثة أضواء نقطية لتحسين الأداء
     const accentLight = new THREE.PointLight(0x88bbff, 2.5, 1.5);
     accentLight.position.set(-0.3, 0.3, 0.3);
     this.scene.add(accentLight);
   }
 
   private initEnvironment(): void {
-    // 1. قاعدة البندول (خشب جوز مصقول دافئ ورائع)
+
     const baseGeo = new THREE.BoxGeometry(0.5, 0.015, 0.25);
     const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x8a5229, // لون خشبي دافئ Walnut Wood
-      roughness: 0.7,  // ملمس خشبي غير عاكس
+      color: 0x8a5229,
+      roughness: 0.7,
       metalness: 0.05,
     });
     this.basePlate = new THREE.Mesh(baseGeo, baseMat);
@@ -109,12 +102,10 @@ export class CradleRenderer {
     this.basePlate.receiveShadow = true;
     this.scene.add(this.basePlate);
 
-    // 2. إطار الحامل المعدني (أعمدة الكروم)
     this.frameGroup = new THREE.Group();
     this.scene.add(this.frameGroup);
   }
 
-  // دوال التحكم بالخيارات المضافة حديثاً
   public setColorScheme(scheme: string): void {
     this.colorScheme = scheme;
   }
@@ -126,33 +117,28 @@ export class CradleRenderer {
   public setShowTrails(show: boolean): void {
     this.showTrails = show;
     if (!show) {
-      // تفريغ سجل مسارات الحركة فور إلغاء التفعيل لمنع القفزات البصرية لاحقاً
+
       this.trailHistory.forEach((history) => history.length = 0);
     }
   }
 
-  /**
-   * إعادة بناء المشهد بالكامل عند تغيير التكوين (مثل عدد الكرات)
-   */
+  
   public rebuildCradle(config: CradleConfig): void {
-    // تنظيف الكائنات القديمة
+
     this.ballsMesh.forEach((mesh) => this.scene.remove(mesh));
     this.lines.forEach((line) => this.scene.remove(line));
     this.ballsMesh = [];
     this.lines = [];
 
-    // تنظيف الإطار القديم
     while (this.frameGroup.children.length > 0) {
       this.frameGroup.remove(this.frameGroup.children[0]);
     }
 
-    // تنظيف متجهات الأسهم القديمة
     this.velocityArrows.forEach((arrow) => this.scene.remove(arrow));
     this.accelerationArrows.forEach((arrow) => this.scene.remove(arrow));
     this.velocityArrows = [];
     this.accelerationArrows = [];
 
-    // تنظيف مسارات التتبع القديمة
     this.trails.forEach((trail) => this.scene.remove(trail));
     this.trails = [];
     this.trailGeometries = [];
@@ -160,13 +146,11 @@ export class CradleRenderer {
 
     const n = config.ballCount;
 
-    // خامة خيوط التعليق
     const lineMaterial = new THREE.LineBasicMaterial({
       color: 0x888899,
       linewidth: 1,
     });
 
-    // تعيين خصائص المعادن والخشونة بناءً على نظام الألوان المختار للواقعية البصرية
     let metalness = 1.0;
     let roughness = 0.05;
     if (this.colorScheme === 'rainbow') {
@@ -182,10 +166,9 @@ export class CradleRenderer {
 
     const rainbowColors = [0xff5555, 0xffaa00, 0xffee00, 0x55ff55, 0x00e5ff, 0x5555ff, 0xff00aa, 0xaa00ff];
 
-    // بناء الكرات والخيوط والأسهم والمسارات
     for (let i = 0; i < n; i++) {
-      // 1. الكرات (خامة منفصلة لكل كرة لتغيير ألوانها ديناميكياً وبشكل مستقل)
-      const ballGeo = new THREE.SphereGeometry(config.radii[i], 24, 24); // تحسين الأداء: تقليل عدد المثلثات
+
+      const ballGeo = new THREE.SphereGeometry(config.radii[i], 24, 24);
       
       let defaultColor = 0xcccccc;
       if (this.colorScheme === 'rainbow') {
@@ -208,18 +191,15 @@ export class CradleRenderer {
       this.scene.add(ballMesh);
       this.ballsMesh.push(ballMesh);
 
-      // 2. خيوط التعليق بصيغة V-shape (خيطين لكل كرة لثبات المسار في بعدين)
       const lineGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(config.pivots[i].x, config.pivots[i].y, 0.04), // نقطة التعليق الأمامية
-        new THREE.Vector3(0, 0, 0),                                       // مركز الكرة
-        new THREE.Vector3(config.pivots[i].x, config.pivots[i].y, -0.04), // نقطة التعليق الخلفية
+        new THREE.Vector3(config.pivots[i].x, config.pivots[i].y, 0.04),
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(config.pivots[i].x, config.pivots[i].y, -0.04),
       ]);
       const line = new THREE.Line(lineGeo, lineMaterial);
       this.scene.add(line);
       this.lines.push(line);
 
-      // 3. متجهات الحركة (Arrows)
-      // سهم السرعة (أخضر)
       const velArrow = new THREE.ArrowHelper(
         new THREE.Vector3(1, 0, 0),
         new THREE.Vector3(0, 0, 0),
@@ -232,7 +212,6 @@ export class CradleRenderer {
       this.scene.add(velArrow);
       this.velocityArrows.push(velArrow);
 
-      // سهم التسارع والجاذبية/القوة (أحمر)
       const accArrow = new THREE.ArrowHelper(
         new THREE.Vector3(0, -1, 0),
         new THREE.Vector3(0, 0, 0),
@@ -245,7 +224,6 @@ export class CradleRenderer {
       this.scene.add(accArrow);
       this.accelerationArrows.push(accArrow);
 
-      // 4. مسارات تتبع الحركة (Trails)
       const maxTrailPoints = 60;
       const trailMat = new THREE.LineBasicMaterial({
         color: defaultColor,
@@ -265,20 +243,17 @@ export class CradleRenderer {
       this.trailHistory.push([]);
     }
 
-    // 5. بناء الهيكل المعدني الحامل
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0x9999aa,
       metalness: 0.9,
       roughness: 0.15,
     });
 
-    // حساب أبعاد الهيكل بناءً على نقاط التعليق وأطوال الخيوط
     const minX = config.pivots[0].x - 0.04;
     const maxX = config.pivots[n - 1].x + 0.04;
     const frameHeight = config.pivots[0].y;
     const zOffset = 0.04;
 
-    // الأعمدة الرأسية الأربعة
     const pillarGeo = new THREE.CylinderGeometry(0.006, 0.006, frameHeight, 16);
     
     const p1 = new THREE.Mesh(pillarGeo, frameMaterial);
@@ -301,7 +276,6 @@ export class CradleRenderer {
     p4.castShadow = true;
     this.frameGroup.add(p4);
 
-    // القضبان الأفقية الجانبية
     const railLengthX = maxX - minX;
     const railGeoX = new THREE.CylinderGeometry(0.006, 0.006, railLengthX, 16);
     railGeoX.rotateZ(Math.PI / 2);
@@ -316,7 +290,6 @@ export class CradleRenderer {
     rx2.castShadow = true;
     this.frameGroup.add(rx2);
 
-    // القضبان الأفقية العرضية الصغرى
     const railGeoZ = new THREE.CylinderGeometry(0.006, 0.006, zOffset * 2, 16);
     railGeoZ.rotateX(Math.PI / 2);
 
@@ -331,10 +304,7 @@ export class CradleRenderer {
     this.frameGroup.add(rz2);
   }
 
-  /**
-   * تحديث مواضع الكرات والخيوط والألوان والأسهم والمسارات البيانية بناءً على الحالة الفيزيائية الحالية
-   * يدعم الاستكمال الخطي (Interpolation) للتنعيم البصري
-   */
+  
   public update(
     theta: number[],
     omega: number[],
@@ -351,7 +321,6 @@ export class CradleRenderer {
     for (let i = 0; i < n; i++) {
       if (i >= this.ballsMesh.length) continue;
 
-      // حساب الزوايا والسرعات والتسارعات المستكملة خطياً للتنعيم البصري الفائق
       let t = theta[i];
       if (prevTheta && prevTheta.length === n) {
         t = prevTheta[i] * (1.0 - alpha) + theta[i] * alpha;
@@ -367,71 +336,63 @@ export class CradleRenderer {
         a = prevAlphaPhysics[i] * (1.0 - alpha) + alphaPhysics[i] * alpha;
       }
 
-      // حساب الإحداثيات ثلاثية الأبعاد الحالية
       const x = config.pivots[i].x + config.lengths[i] * Math.sin(t);
       const y = config.pivots[i].y - config.lengths[i] * Math.cos(t);
-      const z = 0; // الحركة مقيدة في المستوى z = 0
+      const z = 0;
 
-      // 1. تحديث الكرة
       this.ballsMesh[i].position.set(x, y, z);
 
-      // 2. تحديث لون الكرة بناءً على نظام الألوان المختار ديناميكياً
       const mat = this.ballsMesh[i].material as THREE.MeshStandardMaterial;
       if (this.colorScheme === 'chrome') {
         mat.color.setHex(0xcccccc);
       } else if (this.colorScheme === 'rainbow') {
         mat.color.setHex(rainbowColors[i % rainbowColors.length]);
       } else if (this.colorScheme === 'energy') {
-        // مكاملة بصرية: الطاقة الكامنة تعتمد على الارتفاع، والحركية على السرعة المماسية
+
         const h = 1 - Math.cos(t);
-        const peFactor = Math.min(1.0, h / 0.3); // 0.3 تمثل أقصى ارتفاع نسبي (حوالي 45 درجة)
+        const peFactor = Math.min(1.0, h / 0.3);
         
         const speed = Math.abs(config.lengths[i] * w);
-        const keFactor = Math.min(1.0, speed / 1.5); // 1.5 م/ث تمثل أقصى سرعة متوقعة
+        const keFactor = Math.min(1.0, speed / 1.5);
 
-        const c = new THREE.Color(0x222233); // لون السكون
-        const cyanColor = new THREE.Color(0x00e5ff); // لون الكامنة
-        const pinkColor = new THREE.Color(0xff00aa); // لون الحركية
+        const c = new THREE.Color(0x222233);
+        const cyanColor = new THREE.Color(0x00e5ff);
+        const pinkColor = new THREE.Color(0xff00aa);
         
         c.lerp(cyanColor, peFactor);
         c.lerp(pinkColor, keFactor);
         mat.color.copy(c);
       } else if (this.colorScheme === 'velocity') {
-        // خريطة انتشار السرعة: التوهج بناءً على سرعة الحركة لإيضاح انتقال كمية الحركة
+
         const speed = Math.abs(config.lengths[i] * w);
         const velFactor = Math.min(1.0, speed / 1.5);
 
-        const c = new THREE.Color(0x111144); // لون السكون الكحلي الداكن
-        const heatColor = new THREE.Color(0xff3300); // لون الحركة الناري المتوهج
+        const c = new THREE.Color(0x111144);
+        const heatColor = new THREE.Color(0xff3300);
         
         c.lerp(heatColor, velFactor);
         mat.color.copy(c);
       }
 
-      // 3. تحديث خيط التعليق V-shape
       const line = this.lines[i];
       const positions = line.geometry.attributes.position.array as Float32Array;
-      
-      // رأس V الأمامي (ثابت)
+
       positions[0] = config.pivots[i].x;
       positions[1] = config.pivots[i].y;
       positions[2] = 0.04;
 
-      // مركز الكرة (متحرك)
       positions[3] = x;
       positions[4] = y;
       positions[5] = z;
 
-      // رأس V الخلفي (ثابت)
       positions[6] = config.pivots[i].x;
       positions[7] = config.pivots[i].y;
       positions[8] = -0.04;
 
       line.geometry.attributes.position.needsUpdate = true;
 
-      // 4. تحديث متجهات الحركة (Arrows)
       if (this.showVectors) {
-        // حساب متجهات السرعة والتسارع في الإحداثيات الديكارتية
+
         const vx = config.lengths[i] * w * Math.cos(t);
         const vy = config.lengths[i] * w * Math.sin(t);
         const vLength = Math.sqrt(vx * vx + vy * vy);
@@ -440,7 +401,6 @@ export class CradleRenderer {
         const ay = config.lengths[i] * w * w * Math.cos(t) + config.lengths[i] * a * Math.sin(t);
         const aLength = Math.sqrt(ax * ax + ay * ay);
 
-        // سهم السرعة (أخضر)
         const velArrow = this.velocityArrows[i];
         velArrow.position.set(x, y, 0);
         if (vLength > 1e-4) {
@@ -451,7 +411,6 @@ export class CradleRenderer {
           velArrow.visible = false;
         }
 
-        // سهم التسارع (أحمر)
         const accArrow = this.accelerationArrows[i];
         accArrow.position.set(x, y, 0);
         if (aLength > 1e-3) {
@@ -466,7 +425,6 @@ export class CradleRenderer {
         this.accelerationArrows[i].visible = false;
       }
 
-      // 5. تحديث مسارات تتبع الحركة (Trails)
       if (this.showTrails) {
         const history = this.trailHistory[i];
         history.push(new THREE.Vector3(x, y, 0));
@@ -488,7 +446,6 @@ export class CradleRenderer {
         trailGeo.attributes.position.needsUpdate = true;
         this.trails[i].visible = true;
 
-        // مزامنة لون المسار مع اللون الفعلي للكرة لإعطاء طابع متناسق رائع
         const currentBallColor = (this.ballsMesh[i].material as THREE.MeshStandardMaterial).color;
         (this.trails[i].material as THREE.LineBasicMaterial).color.copy(currentBallColor);
       } else {
@@ -497,9 +454,7 @@ export class CradleRenderer {
     }
   }
 
-  /**
-   * تقديم المشهد كاملاً ورسم إطار واحد
-   */
+  
   public render(): void {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);

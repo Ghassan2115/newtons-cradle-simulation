@@ -1,7 +1,7 @@
 import type { CradleConfig, CradleState } from '../physics/Types';
 
 export class Dashboard {
-  // عناصر واجهة المستخدم
+
   private valBallCount = document.getElementById('ball-count-val')!;
   private valRestitution = document.getElementById('restitution-val')!;
   private valDamping = document.getElementById('damping-val')!;
@@ -15,7 +15,6 @@ export class Dashboard {
   private chartCanvas = document.getElementById('energy-chart') as HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
-  // تاريخ الطاقات للرسم البياني
   private historyMaxSamples = 600;
   private historyKE: number[] = [];
   private historyPE: number[] = [];
@@ -43,9 +42,7 @@ export class Dashboard {
     this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 
-  /**
-   * تحديث القيم النصية للمعاملات في الواجهة
-   */
+  
   public updateLabels(config: CradleConfig, speed: number): void {
     this.valBallCount.textContent = config.ballCount.toString();
     this.valRestitution.textContent = config.restitution.toFixed(2);
@@ -54,15 +51,12 @@ export class Dashboard {
     this.valSpeed.textContent = speed.toFixed(2);
   }
 
-  /**
-   * تحديث لوحة البيانات الفورية (الوقت، الخطأ النسبي، الإطارات)
-   */
+  
   public updateStatus(state: CradleState, fps: number): void {
     this.simTime.textContent = state.time.toFixed(2);
     this.energyError.textContent = (state.relativeEnergyError * 100).toFixed(4) + '%';
     this.fpsVal.textContent = Math.round(fps).toString();
 
-    // تلوين خطأ الطاقة بالأحمر إذا كان كبيراً لإنذار المستخدم بانهيار الاستقرار
     if (state.relativeEnergyError > 0.05) {
       this.energyError.style.color = '#ff00aa';
     } else {
@@ -70,9 +64,7 @@ export class Dashboard {
     }
   }
 
-  /**
-   * توليد عناصر التحكم بالكرات الفردية ديناميكياً (الكتلة والزاوية)
-   */
+  
   public rebuildBallControls(
     config: CradleConfig,
     initialAngles: number[],
@@ -98,15 +90,14 @@ export class Dashboard {
 
       this.slidersContainer.appendChild(row);
 
-      // ربط أحداث تغيير كتل وزوايا الكرات الفردية
       const massRange = row.querySelector(`#m-${i}-range`) as HTMLInputElement;
       const angleRange = row.querySelector(`#a-${i}-range`) as HTMLInputElement;
       const massVal = row.querySelector(`#m-${i}-val`)!;
       const angleVal = row.querySelector(`#a-${i}-val`)!;
 
       const triggerChange = () => {
-        const mass = parseFloat(massRange.value) / 1000; // تحويل لـ كجم
-        const angle = (parseFloat(angleRange.value) * Math.PI) / 180; // تحويل لـ راديان
+        const mass = parseFloat(massRange.value) / 1000;
+        const angle = (parseFloat(angleRange.value) * Math.PI) / 180;
         massVal.textContent = massRange.value;
         angleVal.textContent = angleRange.value;
         onBallChange(i, mass, angle);
@@ -117,9 +108,7 @@ export class Dashboard {
     }
   }
 
-  /**
-   * إضافة عينات الطاقة الحالية للرسم البياني
-   */
+  
   public addEnergySample(ke: number, pe: number, te: number): void {
     this.historyKE.push(ke);
     this.historyPE.push(pe);
@@ -132,18 +121,14 @@ export class Dashboard {
     }
   }
 
-  /**
-   * إعادة ضبط تاريخ الرسوم البيانية للطاقة
-   */
+  
   public resetChart(): void {
     this.historyKE = [];
     this.historyPE = [];
     this.historyTE = [];
   }
 
-  /**
-   * رسم منحنيات الطاقة الحية على الـ Canvas
-   */
+  
   public drawChart(): void {
     const canvasW = this.chartCanvas.width / window.devicePixelRatio;
     const canvasH = this.chartCanvas.height / window.devicePixelRatio;
@@ -151,7 +136,6 @@ export class Dashboard {
 
     ctx.clearRect(0, 0, canvasW, canvasH);
 
-    // هوامش محور الرسم لتظهر الحدود بوضوح
     const padLeft = 45;
     const padRight = 10;
     const padTop = 10;
@@ -161,28 +145,25 @@ export class Dashboard {
 
     if (width <= 0 || height <= 0) return;
 
-    // 1. رسم إطار المحاور بوضوح تام
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    // خط المحور السفلي (X-axis)
+
     ctx.moveTo(padLeft, padTop + height);
     ctx.lineTo(padLeft + width, padTop + height);
-    // خط المحور الأيسر (Y-axis)
+
     ctx.moveTo(padLeft, padTop);
     ctx.lineTo(padLeft, padTop + height);
     ctx.stroke();
 
     if (this.historyKE.length === 0) return;
 
-    // 2. حساب أقصى قيمة طاقة لتوسيع المحور الصادي تلقائياً
     let maxEnergy = 1e-5;
     for (let i = 0; i < this.historyKE.length; i++) {
       maxEnergy = Math.max(maxEnergy, this.historyKE[i], this.historyPE[i], this.historyTE[i]);
     }
-    maxEnergy *= 1.15; // هامش علوي
+    maxEnergy *= 1.15;
 
-    // 3. رسم شبكة الخلفية وتسميات المحور Y
     ctx.font = '10px Tajawal, sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -192,7 +173,6 @@ export class Dashboard {
       const yPos = padTop + height * (1 - yFrac);
       const energyVal = maxEnergy * yFrac;
 
-      // خط شبكة أفقي
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -200,7 +180,6 @@ export class Dashboard {
       ctx.lineTo(padLeft + width, yPos);
       ctx.stroke();
 
-      // تسمية القيمة
       ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       if (energyVal < 0.001) {
         ctx.fillText(energyVal.toExponential(0), padLeft - 5, yPos);
@@ -209,12 +188,10 @@ export class Dashboard {
       }
     }
 
-    // تسمية "0" على المحور السفلي
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.textAlign = 'right';
     ctx.fillText('0', padLeft - 5, padTop + height);
 
-    // 4. رسم منحنيات الطاقة
     const drawPath = (data: number[], color: string) => {
       ctx.beginPath();
       ctx.strokeStyle = color;
@@ -236,11 +213,10 @@ export class Dashboard {
       ctx.stroke();
     };
 
-    // طاقة كامنة (سماوي)
     drawPath(this.historyPE, '#00e5ff');
-    // طاقة حركية (وردي)
+
     drawPath(this.historyKE, '#ff00aa');
-    // طاقة ميكانيكية كلية (أخضر)
+
     drawPath(this.historyTE, '#00ff66');
   }
 }

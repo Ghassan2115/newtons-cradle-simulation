@@ -17,9 +17,8 @@ export class CradleEngine {
     const omega = new Array<number>(n).fill(0);
     const alpha = new Array<number>(n).fill(0);
 
-    // حساب الطاقة الابتدائية
     const pe = this.calculatePotentialEnergy(theta);
-    const ke = 0; // السرعات الابتدائية صفر
+    const ke = 0;
     const initialEnergy = pe + ke;
 
     this.state = {
@@ -54,7 +53,7 @@ export class CradleEngine {
 
   public updateConfig(newConfig: Partial<CradleConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    // إعادة ضبط الطاقة الابتدائية لتتناسب مع التعديل الجديد (الكتل أو الأطوال)
+
     const pe = this.calculatePotentialEnergy(this.state.theta);
     const ke = this.calculateKineticEnergy(this.state.omega);
     this.state.initialEnergy = pe + ke;
@@ -65,22 +64,18 @@ export class CradleEngine {
     this.state.lastCollisionVelocity = 0;
   }
 
-  /**
-   * تنفيذ خطوة فيزيائية واحدة ثابتة dt
-   */
+  
   public step(dt: number): void {
-    // 1. حساب التسارع الزاوي الصافي (الجاذبية والتخميد اللزج)
+
     const getAlpha = (t: number, w: number, i: number): number => {
       const g = this.config.g;
       const L = this.config.lengths[i];
       const m = this.config.masses[i];
       const b = this.config.damping;
 
-      // θ'' = -(g/L) * sin(θ) - (b/m) * θ'
       return -(g / L) * Math.sin(t) - (b / m) * w;
     };
 
-    // 2. دمج حركة التأرجح الحر باستخدام المكامل المختار
     const integrationResult = this.integrator.step(
       this.state.theta,
       this.state.omega,
@@ -93,20 +88,17 @@ export class CradleEngine {
     let nextOmega = integrationResult.omega;
     let nextAlpha = integrationResult.alpha;
 
-    // 3. معالجة التصادمات الحتمية (النبضية المتكررة)
     const collisionResult = this.resolveCollisions(nextTheta, nextOmega);
     nextOmega = collisionResult.omega;
     const collisionOccurred = collisionResult.occurred;
     const lastCollisionVelocity = collisionResult.maxRelativeVelocity;
 
-    // إعادة حساب التسارعات بعد تعديل السرعات بفعل التصادم
     if (collisionOccurred) {
       for (let i = 0; i < this.config.ballCount; i++) {
         nextAlpha[i] = getAlpha(nextTheta[i], nextOmega[i], i);
       }
     }
 
-    // 4. حساب الطاقات والخطأ النسبي
     const ke = this.calculateKineticEnergy(nextOmega);
     const pe = this.calculatePotentialEnergy(nextTheta);
     const totalEnergy = ke + pe;
@@ -116,7 +108,6 @@ export class CradleEngine {
       relativeEnergyError = Math.abs(totalEnergy - this.state.initialEnergy) / this.state.initialEnergy;
     }
 
-    // 5. تحديث الحالة الكلية
     this.state = {
       time: this.state.time + dt,
       theta: nextTheta,
@@ -131,10 +122,7 @@ export class CradleEngine {
     };
   }
 
-  /**
-   * حساب الطاقة الكامنة للنظام
-   * Ep = sum( m_i * g * L_i * (1 - cos(theta_i)) )
-   */
+  
   private calculatePotentialEnergy(theta: number[]): number {
     let pe = 0;
     for (let i = 0; i < this.config.ballCount; i++) {
@@ -145,24 +133,19 @@ export class CradleEngine {
     return pe;
   }
 
-  /**
-   * حساب الطاقة الحركية للنظام
-   * Ek = sum( 0.5 * m_i * (L_i * omega_i)^2 )
-   */
+  
   private calculateKineticEnergy(omega: number[]): number {
     let ke = 0;
     for (let i = 0; i < this.config.ballCount; i++) {
       const m = this.config.masses[i];
       const L = this.config.lengths[i];
-      const v = L * omega[i]; // السرعة المماسية
+      const v = L * omega[i];
       ke += 0.5 * m * v * v;
     }
     return ke;
   }
 
-  /**
-   * حل تصادمات الكرات المتعددة بشكل حتمي ومتكرر (Iterative Impulse Resolution)
-   */
+  
   private resolveCollisions(theta: number[], omega: number[]): { omega: number[]; occurred: boolean; maxRelativeVelocity: number } {
     const nextOmega = [...omega];
     const n = this.config.ballCount;
@@ -170,10 +153,8 @@ export class CradleEngine {
     let occurred = false;
     let maxRelativeVelocity = 0;
     let iterations = 0;
-    const maxIterations = 30; // حد أقصى للنبضات المتسلسلة لضمان انتهاء الحلقة
+    const maxIterations = 30;
 
-    // حساب المواضع الأفقية التقديرية للكرات للتحقق من التداخل
-    // بما أن الكرات معلقة بجانب بعضها، فإن المسافة الأفقية الفعالة تعتمد على زاوية الخيط ونقاط التعليق
     const getX = (idx: number, t: number): number => {
       return this.config.pivots[idx].x + this.config.lengths[idx] * Math.sin(t);
     };
@@ -189,7 +170,6 @@ export class CradleEngine {
         const rA = this.config.radii[i];
         const rB = this.config.radii[i + 1];
 
-        // المسافة الفعلية ثلاثية الأبعاد بين مركزي الكرتين المتجاورتين
         const xA = getX(i, theta[i]);
         const yA = getY(i, theta[i]);
         const xB = getX(i + 1, theta[i + 1]);
@@ -202,12 +182,10 @@ export class CradleEngine {
         const overlap = rA + rB - d;
 
         if (overlap > 0) {
-          // السرعات المماسية على طول مسار التأرجح
+
           const uA = this.config.lengths[i] * nextOmega[i];
           const uB = this.config.lengths[i + 1] * nextOmega[i + 1];
 
-          // شرط الحركة التقاربية: يجب أن تتحرك الكرة اليسرى بسرعة أكبر نحو اليمين مقارنة بالكرة اليمنى
-          // أو يتحركان نحو بعضهما البعض
           const relVel = uA - uB;
 
           if (relVel > 1e-6) {
@@ -219,13 +197,9 @@ export class CradleEngine {
             const mB = this.config.masses[i + 1];
             const e = this.config.restitution;
 
-            // حل معادلات التصادم الثنائي المرن/غير المرن وحساب السرعات المماسية النهائية
-            // vA+ = (mA*uA + mB*uB - mB*e*(uA - uB)) / (mA + mB)
-            // vB+ = (mA*uA + mB*uB + mA*e*(uA - uB)) / (mA + mB)
             const vA = (mA * uA + mB * uB - mB * e * relVel) / (mA + mB);
             const vB = (mA * uA + mB * uB + mA * e * relVel) / (mA + mB);
 
-            // تحويل السرعات المماسية إلى سرعات زاوية
             nextOmega[i] = vA / this.config.lengths[i];
             nextOmega[i + 1] = vB / this.config.lengths[i + 1];
           }
